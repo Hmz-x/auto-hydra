@@ -1,7 +1,6 @@
 #!/bin/bash
 
 PROGRAM="auto-hydra.sh"
-OUTFILE="$(echo "$PROGRAM" | cut -d '.' -f 1)_$(date +"%m_%d_%Y").out"
 THREAD_NUM=4
 USAGE="
 usage: $PROGRAM -d PASS_WL_DIR -l|-L USERNAME|FILE -t TARGET
@@ -18,16 +17,25 @@ show_usage()
 
 run_hydra_loop()
 {
+  # OUTFILE format
+  OUTFILE="$HOME/.local/share/auto-hydra/${target_domain}_$(date +"%m_%d_%Y").out"
+  # create log dir for OUTFILE if not existent
+  [ ! -d "$(dirname "$OUTFILE")" ] && mkdir "$(dirname "$OUTFILE")"
+
   for file in "${wl_dir%/}"/*; do
     # Do nothing if file is not a regular readble file
     [[ -f "$file" && -r "$file" ]] || continue
 
     if [ -n "$target_user" ]; then
-      echo hydra -l "$target_user" -P "$file" -IF -t $THREAD_NUM -o "$OUTFILE" 
-      hydra -l "$target_user" -P "$file" -IF -t $THREAD_NUM -o "$OUTFILE" &> /dev/null
+      echo hydra -l "$target_user" -P "$file" -IF \
+        -t $THREAD_NUM -o "$OUTFILE" "$target_domain"
+      hydra -l "$target_user" -P "$file" -IF \
+        -t $THREAD_NUM -o "$OUTFILE" "$target_domain" &> /dev/null
     else
-      echo hydra -L "$target_user_wl" -P "$file" -IF -t $THREAD_NUM -o "$OUTFILE" 
-      hydra -L "$target_user_wl" -P "$file" -IF -t $THREAD_NUM -o "$OUTFILE" &> /dev/null
+      echo hydra -L "$target_user_wl" -P "$file" -IF \
+        -t $THREAD_NUM -o "$OUTFILE" "$target_domain"
+      hydra -L "$target_user_wl" -P "$file" -IF \
+        -t $THREAD_NUM -o "$OUTFILE" "$target_domain" &> /dev/null
     fi
 
     # Search for credentials in OUTFILE, and end loop if found
