@@ -23,21 +23,21 @@ run_hydra_loop()
     [[ -f "$file" && -r "$file" ]] || continue
 
     if [ -n "$target_user" ]; then
-      echo -e "hydra -FP $file -l $target_user -o $OUTFILE \n\n"
-      hydra -FP "$file" -l "$target_user" -o "$OUTFILE"
+      echo hydra -l "$target_user" -P "$file" -IF -t $THREAD_NUM -o "$OUTFILE" 
+      hydra -l "$target_user" -P "$file" -IF -t $THREAD_NUM -o "$OUTFILE" &> /dev/null
     else
-      echo -e "hydra -FP $file -L $target_user_wl -o $OUTFILE \n\n"
-      hydra -FP "$file" -L "$target_user_wl" -o "$OUTFILE"
+      echo hydra -L "$target_user_wl" -P "$file" -IF -t $THREAD_NUM -o "$OUTFILE" 
+      hydra -L "$target_user_wl" -P "$file" -IF -t $THREAD_NUM -o "$OUTFILE" &> /dev/null
     fi
 
     # Search for credentials in OUTFILE, and end loop if found
     echo "Searching for credentials in $OUTFILE"
     if grep -q "(valid password found)" "$OUTFILE"; then
         echo "Credentials found!"
-        grep -E 'login:\s*(\S+)\s*password:\s*(\S+)'
+        grep -E 'login:\s*(\S+)\s*password:\s*(\S+)' "$OUTFILE"
         exit 0
     else
-        echo "No credentials found."
+        echo -e "No credentials found.\n\n"
     fi
   done
 }
