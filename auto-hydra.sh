@@ -18,7 +18,11 @@ show_usage()
 run_hydra_loop()
 {
   # OUTFILE format
-  OUTFILE="$HOME/.local/share/auto-hydra/${target_domain}_$(date +"%m_%d_%Y").out"
+  OUTFILE="$HOME/.local/share/auto-hydra/autohydra_$(date +"%m_%d_%Y").out"
+  OUTFILE_PRG="${OUTFILE}.progress"
+  # Overwrite any previous versions of the files if existing
+  > "$OUTFILE"
+  > "$OUTFILE_PRG"
   # create log dir for OUTFILE if not existent
   [ ! -d "$(dirname "$OUTFILE")" ] && mkdir "$(dirname "$OUTFILE")"
 
@@ -27,21 +31,21 @@ run_hydra_loop()
     [[ -f "$file" && -r "$file" ]] || continue
 
     if [ -n "$target_user" ]; then
-      echo hydra -l "$target_user" -P "$file" -IF \
-        -t $THREAD_NUM -o "$OUTFILE" "$target_domain"
-      hydra -l "$target_user" -P "$file" -IF \
-        -t $THREAD_NUM -o "$OUTFILE" "$target_domain" &> /dev/null
+      echo hydra -l "$target_user" -P "$file" -IF -t $THREAD_NUM \
+        -o "$OUTFILE" "$target_domain" | tee "$OUTFILE_PRG"
+      hydra -l "$target_user" -P "$file" -IF -t $THREAD_NUM \
+        -o "$OUTFILE" "$target_domain" &> "$OUTFILE_PRG"
     else
-      echo hydra -L "$target_user_wl" -P "$file" -IF \
-        -t $THREAD_NUM -o "$OUTFILE" "$target_domain"
-      hydra -L "$target_user_wl" -P "$file" -IF \
-        -t $THREAD_NUM -o "$OUTFILE" "$target_domain" &> /dev/null
+      echo hydra -L "$target_user_wl" -P "$file" -IF -t $THREAD_NUM \
+        -o "$OUTFILE" "$target_domain" | tee "$OUTFILE_PRG"
+      hydra -L "$target_user_wl" -P "$file" -IF -t $THREAD_NUM \
+        -o "$OUTFILE" "$target_domain" &> "$OUTFILE_PRG"
     fi
 
     # Search for credentials in OUTFILE, and end loop if found
-    echo "Searching for credentials in $OUTFILE"
-    if grep -q "(valid password found)" "$OUTFILE"; then
-        echo "Credentials found!"
+    echo "Searching for credentials in $OUTFILE_PRG"
+    if grep -qE 'login:\s*(\S+)\s*password:\s*(\S+)' "$OUTFILE_PRG"; then
+        echo "CREDENTIALS FOUND!" | tee -a "$OUTFILE"
         grep -E 'login:\s*(\S+)\s*password:\s*(\S+)' "$OUTFILE"
         exit 0
     else
