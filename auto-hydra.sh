@@ -34,12 +34,12 @@ run_hydra_loop()
       echo hydra -l "$target_user" -P "$file" -IF -t $THREAD_NUM \
         -o "$OUTFILE" "$target_domain" | tee "$OUTFILE_PRG"
       hydra -l "$target_user" -P "$file" -IF -t $THREAD_NUM \
-        -o "$OUTFILE" "$target_domain" &> "$OUTFILE_PRG"
+        -o "$OUTFILE" "$target_domain" 2>&1 | tee -a "$OUTFILE_PRG" >&2
     else
       echo hydra -L "$target_user_wl" -P "$file" -IF -t $THREAD_NUM \
         -o "$OUTFILE" "$target_domain" | tee "$OUTFILE_PRG"
       hydra -L "$target_user_wl" -P "$file" -IF -t $THREAD_NUM \
-        -o "$OUTFILE" "$target_domain" &> "$OUTFILE_PRG"
+        -o "$OUTFILE" "$target_domain" 2>&1 | tee -a "$OUTFILE_PRG" >&2
     fi
 
     # Search for credentials in OUTFILE, and end loop if found
